@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -60,7 +60,7 @@ func callBitcoinRPC(method string, params interface{}) (*RPCResponse, error) {
 	defer resp.Body.Close()
 
 	// Lê e interpreta a resposta
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao ler a resposta: %v", err)
 	}
@@ -88,6 +88,33 @@ func getBlockchainInfo() {
 	fmt.Println("Blockchain Info:", string(response.Result))
 }
 
+func getBalance() {
+	params := []interface{}{"*", 0}
+	response, err := callBitcoinRPC("getbalance", params)
+	if err != nil {
+		fmt.Println("Erro ao chamar getbalance: %v", err)
+	}
+
+	// Exibe o saldo
+	fmt.Println("Balance:", string(response.Result))
+}
+
+func getWalletBalance(walletName string) {
+	// Define os parâmetros para a chamada RPC
+	params := []interface{}{walletName}
+
+	// Chama o método getbalance no Bitcoin Core
+	response, err := callBitcoinRPC("getbalance", params)
+	if err != nil {
+		log.Fatalf("Erro ao chamar getbalance para a carteira %s: %v", walletName, err)
+	}
+
+	// Exibe o saldo da carteira
+	fmt.Printf("\nSaldo da carteira %s: %s BTC\n", walletName, string(response.Result))
+}
+
 func main() {
-	getBlockchainInfo()
+	// getBlockchainInfo()
+	getBalance()
+	getWalletBalance("")
 }
