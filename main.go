@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/joho/godotenv"
 )
 
 type RPCRequest struct {
@@ -25,6 +27,17 @@ type RPCResponse struct {
 type RPCError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+
+const (
+	timeOut int64 = 1
+)
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Printf("Error loading enviroment file: %v\n", err)
+	}
 }
 
 func callBitcoinRPC(method string, params interface{}) (*RPCResponse, error) {
