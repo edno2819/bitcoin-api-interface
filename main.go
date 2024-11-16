@@ -1,133 +1,19 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	"bitcoin-api-interface/src/connections"
+	"bitcoin-api-interface/src/utils"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-
-	"github.com/joho/godotenv"
 )
-
-type RPCRequest struct {
-	Jsonrpc string      `json:"jsonrpc"`
-	Method  string      `json:"method"`
-	Params  interface{} `json:"params"`
-	ID      int         `json:"id"`
-}
-
-type RPCResponse struct {
-	Result json.RawMessage `json:"result"`
-	Error  *RPCError       `json:"error"`
-	ID     int             `json:"id"`
-}
-
-type RPCError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-const (
-	timeOut int64 = 1
-)
-
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Printf("Error loading enviroment file: %v\n", err)
-	}
-}
-
-func callBitcoinRPC(method string, params interface{}) (*RPCResponse, error) {
-	url := "http://127.0.0.1:18332"
-	rpcUser := "seuusuário"
-	rpcPassword := "suasenha"
-
-	rpcRequest := RPCRequest{
-		Jsonrpc: "1.0",
-		Method:  method,
-		Params:  params,
-		ID:      1,
-	}
-	requestBody, err := json.Marshal(rpcRequest)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao serializar JSON-RPC: %v", err)
-	}
-
-	// Cria uma nova solicitação HTTP
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return nil, fmt.Errorf("erro ao criar a requisição HTTP: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(rpcUser, rpcPassword)
-
-	// Executa a requisição HTTP
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao fazer a requisição HTTP: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Lê e interpreta a resposta
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao ler a resposta: %v", err)
-	}
-
-	// Deserializa a resposta JSON-RPC
-	var rpcResponse RPCResponse
-	if err := json.Unmarshal(body, &rpcResponse); err != nil {
-		return nil, fmt.Errorf("erro ao desserializar resposta JSON-RPC: %v", err)
-	}
-
-	// Verifica se houve erro no resultado JSON-RPC
-	if rpcResponse.Error != nil {
-		return nil, fmt.Errorf("erro do Bitcoin Core: %v", rpcResponse.Error.Message)
-	}
-
-	return &rpcResponse, nil
-}
-
-func getBlockchainInfo() {
-	response, err := callBitcoinRPC("getblockchaininfo", []interface{}{})
-	if err != nil {
-		log.Fatalf("Erro ao chamar getblockchaininfo: %v", err)
-	}
-
-	fmt.Println("Blockchain Info:", string(response.Result))
-}
-
-func getBalance() {
-	params := []interface{}{"*", 0}
-	response, err := callBitcoinRPC("getbalance", params)
-	if err != nil {
-		fmt.Println("Erro ao chamar getbalance: %v", err)
-	}
-
-	// Exibe o saldo
-	fmt.Println("Balance:", string(response.Result))
-}
-
-func getWalletBalance(walletName string) {
-	// Define os parâmetros para a chamada RPC
-	params := []interface{}{walletName}
-
-	// Chama o método getbalance no Bitcoin Core
-	response, err := callBitcoinRPC("getbalance", params)
-	if err != nil {
-		log.Fatalf("Erro ao chamar getbalance para a carteira %s: %v", walletName, err)
-	}
-
-	// Exibe o saldo da carteira
-	fmt.Printf("\nSaldo da carteira %s: %s BTC\n", walletName, string(response.Result))
-}
 
 func main() {
-	// getBlockchainInfo()
-	getBalance()
-	getWalletBalance("")
+	config, err := utils.LoadConfig()
+	if err != nil {
+		fmt.Errorf("Error loading config:")
+		panic(err)
+	}
+	rpcConfig := &config.RPCConfig
+	a := connections.NewRPCInterface(rpcConfig.Host, rpcConfig.Port, rpcConfig.RPCUser, rpcConfig.RPCPassword, rpcConfig.IsHTTPS)
+	a.GetBlockchainInfo()
+	a.GetWalletBalance()
 }
