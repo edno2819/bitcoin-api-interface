@@ -14,6 +14,14 @@ func main() {
 	}
 	rpcConfig := &config.RPCConfig
 	a := connections.NewRPCInterface(rpcConfig.Host, rpcConfig.Port, rpcConfig.RPCUser, rpcConfig.RPCPassword, rpcConfig.IsHTTPS)
+
+	// Example usage:
 	a.GetBlockchainInfo()
+	a.EstimateRawFee(2)
 	a.GetWalletBalance()
+	a.CreateWallet("Wallet1")
+	a.GetWalletBalance()
+	a.ListDescriptors(false)
+	a.DumpWallet("./my_wallet_key.txt")
+
 }
