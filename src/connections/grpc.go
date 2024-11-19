@@ -138,7 +138,7 @@ func (rpcI *RPCInterface) CreateWallet(walletName string) {
 func (rpcI *RPCInterface) GetWalletInfo() {
 	response, err := rpcI.executeMethod("getwalletinfo", []interface{}{})
 	if err != nil {
-		log.Fatalf("Error calling getwalletinfo: %v", err)
+		log.Fatalf("Error calling Wallet Info: %v", err)
 		return
 	}
 	formatPrint("Infos about Wallet:", response.Result)
